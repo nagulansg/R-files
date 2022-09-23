@@ -1,0 +1,448 @@
+####  HW ASSIGNMENT 1 - NAGULAN NATHAN - BTMA431 - 30064918 #####
+
+```{r}
+library(quantmod)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+```
+
+```{r}
+setwd("C:/Users/nagul/Documents/Working Directory")
+```
+
+```{r}
+load('HW1_data.rData')
+```
+
+
+```{r}
+longrunROI <- numeric(7)
+chart.vector <- c("BTC.charts","DASH.charts","ETH.charts","LTC.charts","PPC.charts","XLM.charts","XRP.charts")
+i <- 1
+for (j in chart.vector){
+    eval(parse(text=paste0("longrunROI[", i,"] <- (",j,"$close[",j,"$date == '2021-09-01'] - ",j,"$close[",j,"$date ==          '2016-01-10'])/",j,"$close[",j,"$date == '2016-01-10']")))
+    i <- i+1
+} 
+```
+
+```{r}
+ROI.data <- data.frame(Currencies = c("BTC","DASH","ETH","LTC","PPC","XLM","XRP"),ROI = longrunROI) #creating dataframe of longrun ROI of each cryptocurrency
+ROI.data
+```
+
+```{r}
+3836.77 * 100 #ROUND TO 383700 - THIS IS THE ANSWER FOR 1A
+```
+
+1a) The highest long-run ROI belongs to the Ethereum cryptocurrency. 3836.77 * 100 = 383700
+
+```{r}
+#filtering data to only include the relevant dates
+BTC.charts2 <- BTC.charts[BTC.charts$date >= '2016-01-10' & BTC.charts$date <= '2021-09-01',]
+DASH.charts2 <- DASH.charts[DASH.charts$date >= '2016-01-10' & DASH.charts$date <= '2021-09-01',]
+ETH.charts2 <- ETH.charts[ETH.charts$date >= '2016-01-10' & ETH.charts$date <= '2021-09-01',]
+LTC.charts2 <- LTC.charts[LTC.charts$date >= '2016-01-10' & LTC.charts$date <= '2021-09-01',]
+PPC.charts2 <- PPC.charts[PPC.charts$date >= '2016-01-10' & PPC.charts$date <= '2021-09-01',]
+XLM.charts2 <- XLM.charts[XLM.charts$date >= '2016-01-10' & XLM.charts$date <= '2021-09-01',]
+XRP.charts2 <- XRP.charts[XRP.charts$date >= '2016-01-10' & XRP.charts$date <= '2021-09-01',]
+```
+
+```{r}
+#using for loop and vectorization to get mean daily return for each currency and formatting it in data frame.
+#we find out that ETH has the best mean daily return
+chart.vector2 <- c("BTC.charts2","DASH.charts2","ETH.charts2","LTC.charts2","PPC.charts2","XLM.charts2","XRP.charts2")
+
+i <- 1
+
+for (j in chart.vector2){
+    eval(parse(text=paste0("dailyReturn",i," <- (",j,"$close[2:nrow(",j,")]-",j,"$close[1:nrow(",j,")-1])/",j,"$close[1:nrow(",j,")-1]")))
+  i <- i+1
+} 
+
+meanDailyReturn.data <- data.frame(Currencies = c("BTC","DASH","ETH","LTC","PPC","XLM","XRP"),MeanDailyReturn=c(mean(dailyReturn1),mean(dailyReturn2),mean(dailyReturn3),mean(dailyReturn4),mean(dailyReturn5),mean(dailyReturn6),mean(dailyReturn7)))
+meanDailyReturn.data
+```
+1b)The highest mean daily return is for Ethereum. 0.00577*100 gives us 0.58.
+
+```{r}
+#using sd function on each of the vectors of daily returns and then formatting it in data frame shows us that BTC 
+#has the least standard deviation
+std.data <- data.frame(Currencies = c("BTC","DASH","ETH","LTC","PPC","XLM","XRP"),standarDeviation = c(sd(dailyReturn1),sd(dailyReturn2),sd(dailyReturn3),sd(dailyReturn4),sd(dailyReturn5),sd(dailyReturn6),sd(dailyReturn7)))
+std.data
+```
+
+1c) BTC has the least standard deviation. 0.0399769 rounded to 4.00 for the D2L quiz
+
+QUESTION 2
+
+PORTFOLIO 1 (100%)
+
+5K BTC
+
+PORTFOLIO 2 (50% of each)
+
+2.5K XRP
+2.5K LTC
+
+PORTFOLIO 3 (25% OF EACH)
+
+1.25K ETH
+1.25K DASH
+1.25K PPC
+1.25K XLM
+
+```{r}
+#PORTFOLIO 1 VALUE AS OF 2021 SEPT
+numBTC=5000/BTC.charts2[1,5]
+pf1Val=BTC.charts2[2062,5]*numBTC
+pf1Val
+```
+PORTFOLIO 1 WOULD BE WORTH $545,178 AS OF Sept 1 2021
+
+```{r}
+#PORTFOLIO 2 VALUE AS OF 2021 SEPT
+numXRP=2500/XRP.charts2[1,5]
+
+numLTC=2500/LTC.charts2[1,5]
+
+pf2val=(LTC.charts2[2062,5]*numLTC)+(XRP.charts2[2062,5]*numXRP)
+pf2val
+```
+PORTFOLIO 2 WOULD BE WORTH $646,257 AS OF SEPT 1 2021
+
+```{r}
+#PORTFOLIO 3 VALUE AS OF 2021 SEPT
+numETH=1250/ETH.charts2[1,5]
+numDASH=1250/DASH.charts2[1,5]
+numPPC=1250/PPC.charts2[1,5]
+numXLM=1250/XLM.charts2[1,5]
+
+pf3val=(ETH.charts2[2062,5]*numETH)+(DASH.charts2[2062,5]*numDASH)+(PPC.charts2[2062,5]*numPPC)+(XLM.charts2[2062,5]*numXLM)
+pf3val
+
+```
+PORTFOLIO 3 WOULD BE WORTH $5,141,220 AS OF SEPT 1 2021 (FOR D2L , ROUND TO $5141000)
+
+
+2a) Portfolio 1 = $545,178
+    Portfolio 2 = $646,257
+    Portfolio 3 = $5,141,220
+    
+
+```{r}
+#VALUE OF EACH PORTFOLIO IN OUR TIME PERIOD OF INTEREST
+pf1runval <- data.frame(date=BTC.charts2$date[1:2062],runningValue= numBTC*BTC.charts2$close[1:2062])
+
+pf2runval <- data.frame(date=XRP.charts2$date[1:2062],runningValue = ((XRP.charts2$close[1:2062]*numXRP)+(LTC.charts2$close[1:2062]*numLTC)) )
+
+pf3runval <- data.frame(date=ETH.charts2$date[1:2062], runningValue = (ETH.charts2$close[1:2062]*numETH)+(DASH.charts2$close[1:2062]*numDASH)+(PPC.charts2$close[1:2062]*numPPC)+(XLM.charts2$close[1:2062]*numXLM))
+
+```
+
+```{r}
+#COMBINED DATAFRAME OF ALL PORTFOLIO VALUES
+pfValues <- data.frame(Date = BTC.charts2$date, Portfolio1 = pf1runval$runningValue, Portfolio2 = pf2runval$runningValue, Portfolio3 = pf3runval$runningValue)
+```
+
+```{r}
+head(pfValues,3)
+```
+
+```{r}
+#PLOT OF ALL 3  PORTFOLIO VALUES
+ggplot(data=pfValues,aes(x=Date))+geom_line(aes(y=Portfolio1,color = "Portfolio1"))+geom_line(aes(y=Portfolio2,color = "Portfolio2"))+geom_line(aes(y=Portfolio3,color = "Portfolio3"))+labs(y="Value ($)",x="Date")+ggtitle("Value of Portfolios")+theme(plot.title=element_text(hjust=0.5))+ylim(0,5200000)
+```
+```{r}
+#THE MAXIMUM VALUES ATTAINED BY EACH PORTFOLIO QUESTION 2B
+cat("The maximum dollar values of Portfolio 1,2 and 3 in order are",max(pfValues$Portfolio1),"and",max(pfValues$Portfolio2),"and",max(pfValues$Portfolio3))
+
+```
+```{r}
+pf2dailyReturn <- c(NA,(pf2runval$runningValue[2:2062]-pf2runval$runningValue[1:2061])/pf2runval$runningValue[1:2061])
+pf3dailyReturn <- c(NA,(pf3runval$runningValue[2:2062]-pf3runval$runningValue[1:2061])/pf3runval$runningValue[1:2061])
+pf1dailyReturn <- c(NA,(pf1runval$runningValue[2:2062]-pf1runval$runningValue[1:2061])/pf1runval$runningValue[1:2061])
+```
+
+```{r}
+#2C SCATTERPLOT 1
+qplot(x=na.omit(pf2dailyReturn),y=dailyReturn1)+labs(x='Portfolio 2 Daily Return',y='BTC Daily Return')+ggtitle("Scatterplot of BTC Daily Returns vs Portfolio 2")
+```
+
+```{r}
+#2C SCATTERPLOT 2
+qplot(x=na.omit(pf3dailyReturn),y=dailyReturn1)+labs(x='Portfolio 3 Daily Return',y='BTC Daily Return')+ggtitle("Scatterplot of BTC Daily Returns vs Portfolio 3")
+```
+
+```{r}
+cor(na.omit(pf2dailyReturn),dailyReturn1)
+cor(na.omit(pf3dailyReturn),dailyReturn1)
+```
+2c)The correlation coefficient for portfolio 2 and BTC is 0.4921938 (0.49)
+   The correlation coefficient for portfolio 3 and BTC is 0.6349575 (0.63)
+
+```{r}
+#THIS IS TO ANSWER THE D2L QUESTION
+cor(na.omit(pf1dailyReturn),na.omit(pf3dailyReturn))
+```
+
+```{r}
+#adding daily returns to the running value dataframe
+pf1runval$dailyReturnpf1 <- pf1dailyReturn
+pf2runval$dailyReturnpf2 <- pf2dailyReturn
+pf3runval$dailyReturnpf3 <- pf3dailyReturn
+```
+
+```{r}
+#ADDING BITCOIN DATA INTO THE PORTFOLIO DATAFRAME FOR EASY ANALYSIS
+pf2withBTC <- data.frame(date=pf2runval$date,Portfolio2value=pf2runval$runningValue,Portfolio2DailyReturn=pf2runval$dailyReturnpf2,BTCDailyReturn=c(NA,dailyReturn1))
+head(pf2withBTC,3)
+```
+
+```{r}
+#ADDING BITCOIN DATA INTO THE PORTFOLIO DATAFRAME FOR EASY ANALYSIS
+pf3withBTC <- data.frame(date=pf3runval$date,Portfolio3value=pf3runval$runningValue,Portfolio3DailyReturn=pf3runval$dailyReturnpf3,BTCDailyReturn=c(NA,dailyReturn1))
+head(pf3withBTC,3)
+```
+
+
+```{r}
+#FILTERING FOR DAYS WHERE BTC HAS NEGATIVE OR POSITIVE RETURNS
+pf2withBTCplus <- filter(pf2withBTC,BTCDailyReturn > 0)
+pf2withBTCneg <- filter(pf2withBTC,BTCDailyReturn < 0)
+pf3withBTCplus <- filter(pf3withBTC,BTCDailyReturn > 0)
+pf3withBTCneg <- filter(pf3withBTC,BTCDailyReturn < 0)
+```
+
+```{r}
+#FINDING MEAN RETURNS OF THE PORTFOLIO
+mean(pf2withBTCplus$Portfolio2DailyReturn)
+mean(pf2withBTCneg$Portfolio2DailyReturn)
+mean(pf3withBTCplus$Portfolio3DailyReturn)
+mean(pf3withBTCneg$Portfolio3DailyReturn)
+```
+
+2d)
+The mean daily return for Portfolio 2 for days when Bitcoin daily return was positive is 0.02485 
+The mean daily return for Portfolio 2 for days when Bitcoin daily return was negative is -0.02116
+The mean daily return for Portfolio 3 for days when Bitcoin daily return was positive is 0.02470
+THe mean daily return for Portfolio 3 for days when Bitcoin daily return was negative is -0.0200
+
+Neither portfolio 'dominated' the other for when BTC returns went up or went down as they both had very similar mean returns.
+Portfolio 2 did have slightly higher returns and slightly higher negative returns than Portfolio 3 when BTC went up and down respectively, but it is a minor difference. Meaning it did better on average when BTC went up and did worse on average when BTC went down.
+
+
+QUESTION 3 ROBUSTNESS CHECK BELOW (THE ASSIGNMENT IS DUPLICATED USING AVERAGE, AND IF WE GO THE BOTTOM WE SEE THE ONLY DIFFERENCE IN RESPONSE IS FROM 2D.)
+
+
+```{r}
+BTC.charts$avg <- (BTC.charts$high+BTC.charts$low)/2
+DASH.charts$avg <- (DASH.charts$high+DASH.charts$low)/2
+ETH.charts$avg <- (ETH.charts$high+ETH.charts$low)/2
+LTC.charts$avg <- (LTC.charts$high+LTC.charts$low)/2
+XLM.charts$avg <- (XLM.charts$high+XLM.charts$low)/2
+XRP.charts$avg <- (XRP.charts$high+XRP.charts$low)/2
+PPC.charts$avg <- (PPC.charts$high+PPC.charts$low)/2
+
+```
+
+
+```{r}
+longrunROI <- numeric(7)
+chart.vector <- c("BTC.charts","DASH.charts","ETH.charts","LTC.charts","PPC.charts","XLM.charts","XRP.charts")
+i <- 1
+for (j in chart.vector){
+    eval(parse(text=paste0("longrunROI[", i,"] <- (",j,"$avg[",j,"$date == '2021-09-01'] - ",j,"$avg[",j,"$date ==          '2016-01-10'])/",j,"$avg[",j,"$date == '2016-01-10']")))
+    i <- i+1
+} 
+```
+
+```{r}
+#NO CHANGE IN RESPONSE NOW THAT WE ARE USING AVERAGE
+ROI.data <- data.frame(Currencies = c("BTC","DASH","ETH","LTC","PPC","XLM","XRP"),ROI = longrunROI) #creating dataframe of longrun ROI of each cryptocurrency
+ROI.data
+```
+
+
+
+```{r}
+#filtering data to only include the relevant dates
+BTC.charts2 <- BTC.charts[BTC.charts$date >= '2016-01-10' & BTC.charts$date <= '2021-09-01',]
+DASH.charts2 <- DASH.charts[DASH.charts$date >= '2016-01-10' & DASH.charts$date <= '2021-09-01',]
+ETH.charts2 <- ETH.charts[ETH.charts$date >= '2016-01-10' & ETH.charts$date <= '2021-09-01',]
+LTC.charts2 <- LTC.charts[LTC.charts$date >= '2016-01-10' & LTC.charts$date <= '2021-09-01',]
+PPC.charts2 <- PPC.charts[PPC.charts$date >= '2016-01-10' & PPC.charts$date <= '2021-09-01',]
+XLM.charts2 <- XLM.charts[XLM.charts$date >= '2016-01-10' & XLM.charts$date <= '2021-09-01',]
+XRP.charts2 <- XRP.charts[XRP.charts$date >= '2016-01-10' & XRP.charts$date <= '2021-09-01',]
+```
+
+```{r}
+#using for loop and vectorization to get mean daily return for each currency and formatting it in data frame.
+#we find out that ETH has the best mean daily return
+
+#NO CHANGE IN RESPONSE NOW THAT WE ARE USING AVERAGE
+chart.vector2 <- c("BTC.charts2","DASH.charts2","ETH.charts2","LTC.charts2","PPC.charts2","XLM.charts2","XRP.charts2")
+
+i <- 1
+
+for (j in chart.vector2){
+    eval(parse(text=paste0("dailyReturn",i," <- (",j,"$avg[2:nrow(",j,")]-",j,"$avg[1:nrow(",j,")-1])/",j,"$avg[1:nrow(",j,")-1]")))
+  i <- i+1
+} 
+
+meanDailyReturn.data <- data.frame(Currencies = c("BTC","DASH","ETH","LTC","PPC","XLM","XRP"),MeanDailyReturn=c(mean(dailyReturn1),mean(dailyReturn2),mean(dailyReturn3),mean(dailyReturn4),mean(dailyReturn5),mean(dailyReturn6),mean(dailyReturn7)))
+meanDailyReturn.data
+```
+
+
+```{r}
+#using sd function on each of the vectors of daily returns and then formatting it in data frame shows us that BTC 
+#has the least standard deviation
+std.data <- data.frame(Currencies = c("BTC","DASH","ETH","LTC","PPC","XLM","XRP"),standarDeviation = c(sd(dailyReturn1),sd(dailyReturn2),sd(dailyReturn3),sd(dailyReturn4),sd(dailyReturn5),sd(dailyReturn6),sd(dailyReturn7)))
+std.data
+```
+
+
+```{r}
+#PORTFOLIO 1 VALUE AS OF 2021 SEPT
+numBTC=5000/BTC.charts2[1,5]
+pf1Val=BTC.charts2[2062,5]*numBTC
+pf1Val
+```
+
+
+```{r}
+#PORTFOLIO 2 VALUE AS OF 2021 SEPT
+numXRP=2500/XRP.charts2[1,5]
+
+numLTC=2500/LTC.charts2[1,5]
+
+pf2val=(LTC.charts2[2062,5]*numLTC)+(XRP.charts2[2062,5]*numXRP)
+pf2val
+```
+```{r}
+(pf1Val-5000)/5000
+(pf2val-5000)/5000
+(pf3val-5000)/5000
+```
+
+
+```{r}
+#PORTFOLIO 3 VALUE AS OF 2021 SEPT
+numETH=1250/ETH.charts2[1,5]
+numDASH=1250/DASH.charts2[1,5]
+numPPC=1250/PPC.charts2[1,5]
+numXLM=1250/XLM.charts2[1,5]
+
+pf3val=(ETH.charts2[2062,5]*numETH)+(DASH.charts2[2062,5]*numDASH)+(PPC.charts2[2062,5]*numPPC)+(XLM.charts2[2062,5]*numXLM)
+pf3val
+
+```
+
+
+```{r}
+#VALUE OF EACH PORTFOLIO IN OUR TIME PERIOD OF INTEREST
+pf1runval <- data.frame(date=BTC.charts2$date[1:2062],runningValue= numBTC*BTC.charts2$avg[1:2062])
+
+pf2runval <- data.frame(date=XRP.charts2$date[1:2062],runningValue = ((XRP.charts2$avg[1:2062]*numXRP)+(LTC.charts2$avg[1:2062]*numLTC)) )
+
+pf3runval <- data.frame(date=ETH.charts2$date[1:2062], runningValue = (ETH.charts2$avg[1:2062]*numETH)+(DASH.charts2$avg[1:2062]*numDASH)+(PPC.charts2$avg[1:2062]*numPPC)+(XLM.charts2$avg[1:2062]*numXLM))
+
+```
+
+```{r}
+#COMBINED DATAFRAME OF ALL PORTFOLIO VALUES
+pfValues <- data.frame(Date = BTC.charts2$date, Portfolio1 = pf1runval$runningValue, Portfolio2 = pf2runval$runningValue, Portfolio3 = pf3runval$runningValue)
+```
+
+```{r}
+head(pfValues,3)
+```
+
+```{r}
+#PLOT OF ALL 3  PORTFOLIO VALUES
+ggplot(data=pfValues,aes(x=Date))+geom_line(aes(y=Portfolio1,color = "Portfolio1"))+geom_line(aes(y=Portfolio2,color = "Portfolio2"))+geom_line(aes(y=Portfolio3,color = "Portfolio3"))+labs(y="Value ($)",x="Date")+ggtitle("Value of Portfolios")+theme(plot.title=element_text(hjust=0.5))+ylim(0,5200000)
+```
+```{r}
+#THE MAXIMUM VALUES ATTAINED BY EACH PORTFOLIO QUESTION 2B
+cat("The maximum dollar values of Portfolio 1,2 and 3 in order are",max(pfValues$Portfolio1),"and",max(pfValues$Portfolio2),"and",max(pfValues$Portfolio3))
+
+```
+```{r}
+pf2dailyReturn <- c(NA,(pf2runval$runningValue[2:2062]-pf2runval$runningValue[1:2061])/pf2runval$runningValue[1:2061])
+pf3dailyReturn <- c(NA,(pf3runval$runningValue[2:2062]-pf3runval$runningValue[1:2061])/pf3runval$runningValue[1:2061])
+pf1dailyReturn <- c(NA,(pf1runval$runningValue[2:2062]-pf1runval$runningValue[1:2061])/pf1runval$runningValue[1:2061])
+```
+
+```{r}
+#2C SCATTERPLOT 1
+qplot(x=na.omit(pf2dailyReturn),y=dailyReturn1)+labs(x='Portfolio 2 Daily Return',y='BTC Daily Return')+ggtitle("Scatterplot of BTC Daily Returns vs Portfolio 2")
+```
+
+```{r}
+#2C SCATTERPLOT 2
+qplot(x=na.omit(pf3dailyReturn),y=dailyReturn1)+labs(x='Portfolio 3 Daily Return',y='BTC Daily Return')+ggtitle("Scatterplot of BTC Daily Returns vs Portfolio 3")
+```
+
+```{r}
+#WE CAN SEE THERE IS NO CHANGE, CORRELATION STILL STRONGER FOR PF3 VS PF1 AS OPPOSED TO PF2 VS PF1
+cor(na.omit(pf2dailyReturn),dailyReturn1)
+cor(na.omit(pf3dailyReturn),dailyReturn1)
+```
+
+
+```{r}
+
+cor(na.omit(pf1dailyReturn),na.omit(pf3dailyReturn))
+```
+
+```{r}
+#adding daily returns to the running value dataframe
+pf1runval$dailyReturnpf1 <- pf1dailyReturn
+pf2runval$dailyReturnpf2 <- pf2dailyReturn
+pf3runval$dailyReturnpf3 <- pf3dailyReturn
+```
+
+```{r}
+#ADDING BITCOIN DATA INTO THE PORTFOLIO DATAFRAME FOR EASY ANALYSIS
+pf2withBTC <- data.frame(date=pf2runval$date,Portfolio2value=pf2runval$runningValue,Portfolio2DailyReturn=pf2runval$dailyReturnpf2,BTCDailyReturn=c(NA,dailyReturn1))
+head(pf2withBTC,3)
+```
+
+```{r}
+#ADDING BITCOIN DATA INTO THE PORTFOLIO DATAFRAME FOR EASY ANALYSIS
+pf3withBTC <- data.frame(date=pf3runval$date,Portfolio3value=pf3runval$runningValue,Portfolio3DailyReturn=pf3runval$dailyReturnpf3,BTCDailyReturn=c(NA,dailyReturn1))
+head(pf3withBTC,3)
+```
+
+
+```{r}
+#FILTERING FOR DAYS WHERE BTC HAS NEGATIVE OR POSITIVE RETURNS
+pf2withBTCplus <- filter(pf2withBTC,BTCDailyReturn > 0)
+pf2withBTCneg <- filter(pf2withBTC,BTCDailyReturn < 0)
+pf3withBTCplus <- filter(pf3withBTC,BTCDailyReturn > 0)
+pf3withBTCneg <- filter(pf3withBTC,BTCDailyReturn < 0)
+```
+
+```{r}
+#FINDING MEAN RETURNS OF THE PORTFOLIO - WE CAN SEE THAT PORTFOLIO 2 DOES WORSE WHEN BTC RETURNS DROP THAN IT DOES WHEN BTC RETURNS GO UP. THIS IS DIFFERENT COMPARED TO OUR ORIGINAL RESPONSE USING CLOSING PRICE
+mean(pf2withBTCplus$Portfolio2DailyReturn)
+mean(pf2withBTCneg$Portfolio2DailyReturn)
+mean(pf3withBTCplus$Portfolio3DailyReturn)
+mean(pf3withBTCneg$Portfolio3DailyReturn)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

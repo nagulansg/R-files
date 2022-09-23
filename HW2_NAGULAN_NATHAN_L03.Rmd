@@ -1,0 +1,320 @@
+####  HW ASSIGNMENT 2 - NAGULAN NATHAN - BTMA431 - 30064918 #####
+
+
+```{r}
+#install.packages("plyr") #i am using this for the rounding to the nearest 5000 function for question 4
+```
+
+```{r}
+library(quantmod)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+library(plyr) #i am using this for the rounding to the nearest 5000 function for question 4
+```
+
+```{r}
+setwd("C:/Users/nagul/Documents/Working Directory")
+```
+
+```{r}
+load("C:/Users/nagul/Documents/Working Directory/exam_scores1.rda")
+load("C:/Users/nagul/Documents/Working Directory/exam_scores2.rda")
+load("C:/Users/nagul/Documents/Working Directory/exam_scores3.rda")
+load("C:/Users/nagul/Documents/Working Directory/exam_scores4.rda")
+load("C:/Users/nagul/Documents/Working Directory/exam_scores5.rda")
+```
+
+
+```{r}
+classlist <- read.csv("BTMA 431 L03 - (Fall 2021).csv",header=TRUE,stringsAsFactors = FALSE)
+```
+```{r}
+load("C:/Users/nagul/Documents/Working Directory/HW2Q4.RData")
+```
+
+
+################ QUESTION 1 ######################
+
+
+```{r}
+#CREATING A FUNCTION OF THE RETAKE POLICY
+retakepolicy <- function(initial,retake,P=30,B=30){
+  if (initial < P){
+    if (retake >= P+B){return(P+B)}
+    else {return(retake)}
+    } #main if statement clOSE
+  else if (initial >= P){
+    if (retake >= initial + B){return(initial+B)}
+    else {return(retake)}
+  }#else if close
+  }#function close
+```
+
+```{r}
+retakepolicy(21,50) #q1-1
+```
+```{r}
+retakepolicy(21,60) #q1-2
+```
+```{r}
+retakepolicy(21,70) #q1-3
+```
+q1 - 4 Because 21 is less than P, the highest possible score now is P+B which is 60. 
+
+```{r}
+retakepolicy(54,67,P=22,B=30) #q1 - 5
+```
+
+```{r}
+retakepolicy(54,78,P=22,B=30) #q1 - 6
+```
+```{r}
+retakepolicy(54,89,P=22,B=30) #q1-7  see how max is S+B which is 54+30
+```
+q1-8, as evident by the answer to q1-7 , the maximum post retake score would be 84
+
+```{r}
+retakepolicy(22,100) #q1-9 the maximum would be P+B since S is less than P. P+B is 60
+```
+```{r}
+retakepolicy(86,150) #q1-10, the maximum since S > P and R > S+B, S+B is the maximum (86+30)
+```
+
+############# QUESTION 1 PART 2 ###############
+
+```{r}
+
+#creating a similar function to part 1 but with a score of 1000 for retake just to see what maxmimums one would get at a certain P and B
+
+pboptimal <- function(initial,retake=1000,P=30,B=30){
+  if (initial < P){
+    if (retake >= P+B){return(P+B)}
+    else {return(retake)}
+    } #main if statement clOSE
+  else if (initial >= P){
+    if (retake >= initial + B){return(initial+B)}
+    else {return(retake)}
+  }#else if close
+}
+
+#this function uses pboptimal function defined above on a classlist so as to get the maximum mean class retake score
+meanretake <- function(examscores,retake=1000,P=30,B=30){
+  listofretakescores <- numeric(length(examscores))
+  for (i in 1:length(examscores)){
+    listofretakescores[i] <- pboptimal(examscores[i],retake=1000,P=P,B=B)}
+  return(mean(listofretakescores))  
+}
+
+#this function uses pboptimal function defined above on a classlist so as to get the sd of maximum class retake scores
+sdretake <- function(examscores,retake=1000,P=30,B=30){
+  listofretakescores <- numeric(length(examscores))
+  for (i in 1:length(examscores)){
+    listofretakescores[i] <- pboptimal(examscores[i],retake=1000,P=P,B=B)}
+  return(sd(listofretakescores))  
+  }
+
+
+```
+
+
+```{r}
+optimizer <- function(examscores){  #THIS IS THE FUNCTION FOR TA TO USE. IT REFERENCES THE 3 ABOVE MADE FUNCTIONS 
+                                    #SO IT IS EASIER TO UNDERSTAND
+  test.df <- data.frame(matrix(ncol=50,nrow = 50))   #creating a table with p for row and b for cols. 
+  colnames(test.df) <- c("B=2",seq(4,100,2))         #the table will store all means
+  rownames(test.df) <- c("P=2",seq(4,100,2))
+  
+  shortlist.df <- data.frame(matrix(ncol=6,nrow=100))  #this table will hold values from the table above that
+  colnames(shortlist.df) <- c("P","B","P+B","means","sds","sdpre")#satisfy P+B>= 60 and means btwn 70 and 75
+  
+  k <- 0
+  for (i in seq(2,100,2)){   #i is basically vertical
+   for (j in seq(2,100,2)){#j is horizontal
+     test.df[0.5*i,0.5*j] <- round(meanretake(examscores,retake=1000,P=i,B=j),digits=2) #populate test.df with means
+     if(test.df[0.5*i,0.5*j] <= 75 & test.df[0.5*i,0.5*j] >= 70 & i+j >= 60){
+       k <- k+1
+       shortlist.df[k,] <- c(i,j,i+j,test.df[0.5*i,0.5*j],round(sdretake(examscores,retake=1000,P=i,B=j),digits=2),round(sd(examscores),digits=2))}}}  #populating the shortlist table with vals that satisfy if statement constraints
+  
+  shortlist.df$sddiff <- abs(shortlist.df$sds-shortlist.df$sdpre) 
+  
+  optimalp <- shortlist.df[which.min(shortlist.df$sddiff),]$P
+  optimalb <- shortlist.df[which.min(shortlist.df$sddiff),]$B  
+  
+  cat("The optimal P value and B value are",optimalp,"and",optimalb,"\n")
+
+}
+```
+
+
+```{r}
+optimizer(exam_scores1)
+optimizer(exam_scores2)
+optimizer(exam_scores3)
+optimizer(exam_scores4)
+optimizer(exam_scores5)
+```
+
+################ QUESTION 2 ###################### 
+
+```{r}
+#function takes number of students wanted and csvfile name as arguments. csvfile must be in working directory
+studentPicker <- function(numstudents,csvfile){
+  classlistx <- read.csv(csvfile,header=TRUE,stringsAsFactors = FALSE) 
+  studentindex <- sample(1:nrow(classlistx),numstudents,replace=FALSE) #pick a few random numbers from number of students
+  return(classlistx[studentindex,2:1]) #return rows from the dataframe that have names of selected students in FnameLname format
+}
+
+```
+
+
+```{r}
+studentPicker(numstudents=3,csvfile="BTMA 431 L03 - (Fall 2021).csv") #testing the code
+```
+
+################ QUESTION 3 ###################
+
+
+```{r}
+
+peerreviewer <- function(listofstudents){
+    #below is jsut so the original list does not get modified
+    assignedlist <- listofstudents
+    #creating an index for each student makes the process easier as people could have same fname or lname
+    assignedlist$Index <- 1:nrow(listofstudents)
+    assignedlist <- assignedlist %>% relocate(Index, .before = Last.Name)  
+    #these lists below are initialized just so we can add indexes to them to keep track of people that have already been     selected , like if some index is already in the checkerlist, the while loop keeps running and keeps sampling until a     new person is picked
+    checkerlist <-numeric(100)
+    checkerlist2 <-numeric(100)
+    checkerlist3 <-numeric(100)
+    
+    for (i in 1:nrow(assignedlist)){
+      #the [-i] guarantees student can't mark their own work as we exclude them from sample 
+      reviewercolumn <- sample(assignedlist$Index[-i],1,replace=FALSE) 
+      reviewercolumn2 <- sample(assignedlist$Index[-i],1,replace=FALSE) 
+      reviewercolumn3 <- sample(assignedlist$Index[-i],1,replace=FALSE)
+      #THESE WHILE LOOPS BELOW ENSURE A STUDENT IS NOT ASSIGNED TWICE FOR A COLUMN OR ROW (ISSUE OF SAME STUDENT ASSIGNED TWICE TO ONE HW)    
+      while (reviewercolumn %in% checkerlist){ 
+          reviewercolumn <- sample(assignedlist$Index[-i],1,replace=FALSE)   
+      }
+      checkerlist <- c(checkerlist,reviewercolumn)
+      
+      while (reviewercolumn2 %in% checkerlist2 || reviewercolumn2 == reviewercolumn){ 
+          reviewercolumn2 <- sample(assignedlist$Index[-i],1,replace=FALSE) 
+      }
+      checkerlist2 <- c(checkerlist2,reviewercolumn2)
+      
+      while (reviewercolumn3 %in% checkerlist3 || reviewercolumn3 == reviewercolumn2 || reviewercolumn3 == reviewercolumn){ 
+          reviewercolumn3 <- sample(assignedlist$Index[-i],1,replace=FALSE)
+      }
+      checkerlist3 <- c(checkerlist3,reviewercolumn3)
+      #add fnamelname to df beloW
+      assignedlist$student1[i] <- paste(assignedlist$First.Name[reviewercolumn],assignedlist$Last.Name[reviewercolumn]) 
+      assignedlist$student2[i] <- paste(assignedlist$First.Name[reviewercolumn2],assignedlist$Last.Name[reviewercolumn2])
+      assignedlist$student3[i] <- paste(assignedlist$First.Name[reviewercolumn3],assignedlist$Last.Name[reviewercolumn3])
+      } #for loop end
+    return(assignedlist)  
+}#function end
+
+```
+
+
+```{r}
+#TA can read in their own csv file of classlists in the same format as the original classlist. Will work on any classlist>=4 people
+classlist <- read.csv("BTMA 431 L03 - (Fall 2021).csv",header=TRUE,stringsAsFactors = FALSE)
+```
+
+
+```{r}
+finalassignedlist <- peerreviewer(classlist)  #APPLYING THE FUNCTION. WE HAVE 3 UNIQUE STUDENTS ASSIGNED TO EACH STUDENT. 
+finalassignedlist 
+
+```
+```{r}
+table(c(finalassignedlist$student1,finalassignedlist$student2,finalassignedlist$student3)) #PROOF THAT FUNCTION ASSIGNS A PERSON                                                                                              #THRICE
+```
+
+
+################ QUESTION 4 ###################
+
+
+```{r}
+
+letsplayagame <- function(mynum){
+  if(mynum >= 0 && mynum <= 1000 && mynum == round(mynum)) #if statement to ensure input is integer between 0-1000 inc
+    {""}
+  else
+  {stop("Invalid input, please pick integer between 0-1000 inclusive")}
+  
+  profnum <- sample(0:1000,1,replace=TRUE)
+  pmtamount=(mynum-profnum)^2
+  return(pmtamount)
+}
+```
+
+```{r}
+
+meanpayout <- function(chosennum){ #takes numeric input
+nsims <- 1000000
+expectedpayments <- numeric(nsims)
+
+for (i in 1:nsims){
+  expectedpayments[i] <- letsplayagame(chosennum)
+}
+return(mean(expectedpayments))}
+#expectedpayments.df <- data.frame(simulationNumber=1:length(expectedpayments),Loss=expectedpayments)
+
+```
+
+```{r}
+options(scipen=999)
+```
+
+
+```{r}
+#Mean payouts - rounded answers for 4a,4b,4c
+cat("The mean payouts if the chosen numbers are 30, 950 and 450 respectively are $", round_any(meanpayout(30),5000)," , $",round_any(meanpayout(950),5000)," and $",round_any(meanpayout(450),5000),sep="")
+```
+
+```{r}
+nsims1=1000000
+professorpick <- numeric(nsims1)
+for (i in 1:nsims1){
+  professorpick[i] <- sample(0:1000,1,replace=TRUE)
+}
+profselections <- data.frame(professorpick)
+head(profselections,3)
+
+```
+
+
+```{r}
+cat("To minimize my expected loss I would pick",round_any(mean(profselections$professorpick),5),"as we can see over a large number of simulations this is the average of the numbers selected") #the average number selected by the sample function , the random number. We want to pick this number to minimize our loss. 4d
+```
+
+```{r}
+
+cat("The expected loss at this chosen number of 500 is $",round_any(meanpayout(500),5000),sep="")
+
+```
+######### QUESTION 4F #############################
+
+
+
+```{r}
+#build function that takes in vector of numbers as input, and returns number that minimizes expected loss
+
+randomvectorfunction <- function(hwdata){
+  nsims2 <- 1000000
+  profchoice <- numeric(nsims2)
+  for (i in 1:nsims2){
+    profchoice[i] <- sample(hwdata,1,replace=TRUE)}
+  return(mean(profchoice))
+  }
+```
+
+```{r}
+round_any(randomvectorfunction(HW2Q4),5) #Q4f
+```
+
+

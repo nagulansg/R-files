@@ -1,0 +1,421 @@
+---
+title: "HW3_NAGULAN_NATHAN_L03"
+output: html_document
+
+---
+```{r}
+#install.packages("plyr") #i am using this package for a rounding function
+library(quantmod)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+library(plyr)
+library(rvest)
+library(XML)
+library(httr)
+```
+
+
+
+```{r}
+saleprice <- 2.5
+unitcost <- 0.2
+100*(saleprice-unitcost)
+```
+```{r}
+(80*saleprice)-(100*unitcost)
+```
+
+
+1a 230 dollars
+1b 180 dollars
+1c Stocking amount
+
+```{r}
+num0fn0rmalvariables <- 1000000
+stocking.level <- (1:400)
+```
+
+
+```{r}
+
+#1d, we run a simulation get  the optimal solution lies 
+expectedprofit <- numeric(length(stocking.level))
+
+demandsim <- rnorm(num0fn0rmalvariables,120,25)
+
+for (i in stocking.level){
+  sim.sold <- pmin(demandsim,stocking.level[i]) 
+  sim.profit <- sim.sold * saleprice - stocking.level[i] * unitcost
+  expectedprofit[i] <- mean(sim.profit)
+                  
+                     
+}
+
+which.max(expectedprofit)
+
+```
+
+1d 155 is the optimal stocking level
+
+
+
+```{r}
+optimalstock <- 155
+pnorm(155,120,25) #given stocking level is 155, what are the odds we have enough stock? 1e
+```
+1e 0.92
+```{r}
+#1f and 1g
+
+sim.demand1 <- unlist(rnorm(num0fn0rmalvariables,120,25))
+demandover155 <- sim.demand1[sim.demand1>optimalstock] #filtering our dataset to the condition, and looking at the mean diff
+mean(demandover155-optimalstock)
+demandunder155 <- sim.demand1[sim.demand1<optimalstock] #filtering our dataset to the condition, and looking at the mean diff
+mean(optimalstock-demandunder155)
+
+
+
+```
+1f 11.35
+1g 39.04
+
+WE HAVE A FUNCTION, THAT GIVEN A STOCK AMT WILL FIND THE OPTIMAL STOCKING LEVEL
+
+```{r}
+q1hfunction1 <- function(stock){
+  
+expectedprofit <- numeric(length(stock))
+
+sim.demand <- rnorm(num0fn0rmalvariables,120,0)
+sim.sold <- pmin(sim.demand,stock) 
+sim.profit <- sim.sold * saleprice - stock * unitcost
+expectedprofit <- mean(sim.profit)
+return(expectedprofit)                  
+}
+
+q1hfunction2 <- function(stock){
+  
+expectedprofit <- numeric(length(stock))
+
+sim.demand <- rnorm(num0fn0rmalvariables,120,5)
+sim.sold <- pmin(sim.demand,stock) 
+sim.profit <- sim.sold * saleprice - stock * unitcost
+expectedprofit <- mean(sim.profit)
+return(expectedprofit)                  
+}
+
+q1hfunction3 <- function(stock){
+  
+expectedprofit <- numeric(length(stock))
+
+sim.demand <- rnorm(num0fn0rmalvariables,120,10)
+sim.sold <- pmin(sim.demand,stock) 
+sim.profit <- sim.sold * saleprice - stock * unitcost
+expectedprofit <- mean(sim.profit)
+return(expectedprofit)                  
+}
+
+q1hfunction4 <- function(stock){
+  
+expectedprofit <- numeric(length(stock))
+
+sim.demand <- rnorm(num0fn0rmalvariables,120,15)
+sim.sold <- pmin(sim.demand,stock) 
+sim.profit <- sim.sold * saleprice - stock * unitcost
+expectedprofit <- mean(sim.profit)
+return(expectedprofit)                  
+}
+
+q1hfunction5 <- function(stock){
+  
+expectedprofit <- numeric(length(stock))
+
+sim.demand <- rnorm(num0fn0rmalvariables,120,20)
+sim.sold <- pmin(sim.demand,stock) 
+sim.profit <- sim.sold * saleprice - stock * unitcost
+expectedprofit <- mean(sim.profit)
+return(expectedprofit)                  
+}
+
+q1hfunction6 <- function(stock){
+  
+expectedprofit <- numeric(length(stock))
+
+sim.demand <- rnorm(num0fn0rmalvariables,120,25)
+sim.sold <- pmin(sim.demand,stock) 
+sim.profit <- sim.sold * saleprice - stock * unitcost
+expectedprofit <- mean(sim.profit)
+return(expectedprofit)                  
+}
+
+q1hfunction7 <- function(stock){
+  
+expectedprofit <- numeric(length(stock))
+
+sim.demand <- rnorm(num0fn0rmalvariables,120,30)
+sim.sold <- pmin(sim.demand,stock) 
+sim.profit <- sim.sold * saleprice - stock * unitcost
+expectedprofit <- mean(sim.profit)
+return(expectedprofit)                  
+}
+
+```
+
+```{r}
+#these take a while to run for 1h, to create the dataframe for the plot
+results1 <- sapply(stocking.level,q1hfunction1)
+results2 <- sapply(stocking.level,q1hfunction2)
+results3 <- sapply(stocking.level,q1hfunction3)
+results4 <- sapply(stocking.level,q1hfunction4)
+results5 <- sapply(stocking.level,q1hfunction5)
+results6 <- sapply(stocking.level,q1hfunction6)
+results7 <- sapply(stocking.level,q1hfunction7)
+  
+  
+deviation.dataframe <- data.frame(Profit=c(max(results1),max(results2),max(results3),max(results4),max(results5),max(results6),max(results7)),OptimalQuantity=c(which.max(results1),which.max(results2),which.max(results3),which.max(results4),which.max(results5),which.max(results6),which.max(results7)),StandardDeviation=seq(0,30,5))
+```
+
+
+```{r}
+deviation.dataframe
+```
+
+
+```{r}
+#1h
+ggplot(data=deviation.dataframe,aes(x=StandardDeviation,y=Profit))+geom_col(col='red')+ggtitle("Expected Profits as a fuction of standard deviation")+coord_cartesian(ylim=c(260,280))+scale_y_continuous(breaks = seq(260,280,by = 1))+scale_x_continuous(breaks=seq(0,30,5))+xlab("Deviation in Demand")+ylab("Expected Profit")
+```
+
+
+```{r}
+#1i modifying cost of muffins and doing same process as 1d (HOWEVER WE KNOW FROM EXPECTED VALUE RULE THAT OPTIMAL STOCKING LEVEL WONT CHANGE)
+num0fn0rmalvariables <- 1000000
+stocking.level2 <- (100:400)
+expectedprofit5 <- numeric(length(stocking.level2))
+
+sim.demand5 <- rnorm(num0fn0rmalvariables,120,25)
+for (i in stocking.level2){
+  
+  sim.sold5 <- pmin(sim.demand5,stocking.level2[i-99]) 
+  sim.profit5 <- sim.sold5 * saleprice - (stocking.level2[i-99]-100) * unitcost
+  expectedprofit5[i-99] <- mean(sim.profit5)
+                  
+}
+
+expectedprofit5.df <- data.frame(StockingLevel=stocking.level2, Profits=expectedprofit5)
+
+expectedprofit5.df$StockingLevel[which.max(expectedprofit5.df$Profits)]
+
+```
+
+
+1i) 155-100 = 55, 55 is the amount of muffins to buy
+
+
+
+QUESTION 2
+
+
+```{r}
+#retrieving data
+url <- "https://s3.amazonaws.com/tripdata/202101-citibike-tripdata.csv.zip"
+temp <- tempfile()
+download.file(url, temp)
+citibike <- read.csv(unz(temp, "202101-citibike-tripdata.csv"),
+stringsAsFactors = FALSE)
+unlink(temp)
+
+```
+
+```{r}
+citibike.trips <- citibike %>%
+  filter(usertype == "Subscriber"|usertype == "Customer")
+```
+
+
+Customers pay fixed fee, Subscriber pays yearly membership fee
+Both can get overage charges
+
+
+```{r}
+#creating 2 new dataframes 
+subscriber.data <- citibike.trips %>%
+  filter(usertype == "Subscriber" & tripduration > (60*45) & tripduration < 86400)
+customer.data <- citibike.trips %>%
+  filter(usertype == "Customer" & tripduration > (60*30) & tripduration < 86400)
+```
+
+```{r}
+customer.data
+```
+
+
+```{r}
+#adding column with overage charges
+options(scipen = 999)
+subscriber.per.second.cost <- 2.5/(15*60)
+customer.per.second.cost <- 3/(30*60)
+subscriber.data$overage <- (subscriber.data$tripduration-(60*45))*subscriber.per.second.cost
+customer.data$overage <- (customer.data$tripduration-(60*30))*customer.per.second.cost
+
+```
+
+
+```{r}
+#2a
+round((sum(subscriber.data$overage)+sum(customer.data$overage))/(sum(nrow(subscriber.data))+sum(nrow(customer.data))),digits=1) #add all overage charges and divide by instances of overage charges
+
+#2b
+round(sd(c(subscriber.data$overage,customer.data$overage))) #combine all overage charges and find sd
+
+#2c
+round_any(sum(subscriber.data$overage),1000) #subscriber total charges
+round_any(sum(customer.data$overage),1000) #customer total charges
+```
+2a $4.00
+2b $14.00
+2c $76000 for subscribers, $7500 for customers
+
+```{r}
+
+#creating 2 new functions to determine overage charges from tripduration, and then creating a new column like we did before for the overage charges
+subscriber.overage.function <- function(x){
+  excesstime <- (x-(45*60))/60
+  charge <- ceiling(excesstime/15)*2.50
+  return(charge)
+}
+customer.overage.function <- function(x){
+  excesstime <- (x-(30*60))/60
+  charge <- ceiling(excesstime/30)*3
+  return(charge)
+}
+
+subscriber.data2 <- citibike.trips %>%
+  filter(usertype == "Subscriber" & tripduration > (60*45) & tripduration < 86400)
+customer.data2 <- citibike.trips %>%
+  filter(usertype == "Customer" & tripduration > (60*30) & tripduration < 86400)
+
+subscriber.data2$overage <- sapply(subscriber.data2$tripduration,subscriber.overage.function)
+customer.data2$overage <- sapply(customer.data2$tripduration,customer.overage.function)
+
+
+```
+
+```{r}
+round_any((sum(subscriber.data2$overage)+sum(customer.data2$overage))/(sum(nrow(subscriber.data2))+sum(nrow(customer.data2))),0.1)#2d
+round_any(sd(c(subscriber.data2$overage,customer.data2$overage)),0.1) #2e 
+round_any(sum(subscriber.data2$overage)/nrow(subscriber.data2),0.1) #2h
+round_any(sum(customer.data2$overage)/nrow(customer.data2),0.1) #2h
+```
+2d $5.80
+2e $13.90
+2f Due to the higher mean overall charge from the current pricing policy, I recommend keeping it as is (avoid the continuous charge)
+2g The policy with the higher expected overage charge does infact have a lower standard deviation
+2h $7 for subscribers and $5.10 for customers
+
+
+
+#######################QUESTION 3######################## 
+
+3a Binomial distribution with n =50 trials and chance of a success as 1- p/10
+  This is because each of the 50 people are walking past independently, and each of them have a fixed probability of success which is   1-p/10
+  
+```{r}
+50*(1-2/10) #3b
+sqrt(50*(1-2/10)*(2/10)) #3c
+50*(1-4/10) #3d
+sqrt(50*(1-4/10)*(4/10)) #3e
+
+```
+3b 40.00
+3c 2.83
+3d 30.00
+3e 3.46
+
+
+#####################QUESTION 4########################
+
+4a tHE expected marginal cost is $0.20.
+
+4b The expected marginal revenue must be $0.20, as that is the marginal cost. So marginal revenue- marginal cost = 0. The blank in the     template is to be filled by 0.08.
+
+20 cents = 0.08 * $2.50 
+0.08
+
+
+Demand is normally distributed, mean of 120 and sd of 125. 0.08 is the odds of demand being greater than the stocking level (as that is when there is a marginal revenue). So qnorm of 1-0.08 tells us the theoretical optimal stocking level.
+```{r}
+#4C
+qnorm(0.92,120,25)
+```
+
+
+#######################QUESTION 5#####################
+
+20b tickets total
+you have 10000 tickets
+in One week we have 201600 3sec intervals, or draws
+
+```{r}
+(7*24*60*60)/3
+((20000000000-10000)/20000000000)^201600 #5A
+```
+
+```{r}
+pbinom(0,201600,10000/20000000000,lower.tail=FALSE)#5a
+```
+
+
+5a 0.9 and 0.1
+```{r}
+#trying out different numbers of tickets to have in order to have 80%chance of winning #5b
+lottochance <- numeric(200000)  
+
+for (i in 10000:200000){
+  lottochance[i-9999] <- pbinom(0,201600,i/20000000000,lower.tail=FALSE)
+  if (lottochance[i-9999] > 0.799999999){
+    print(i)
+    break}
+}
+
+```
+5b This value rounds to 160 000, the number of tickets to buy for a minimum 80% chance
+
+the expected value, or mean, of a binomial distribution, is calculated by multiplying the number of trials (10512000) by the probability of successes (p), or n x p. Then multiply by 250, the prize associated with a success
+```{r}
+secs365 <- 365*24*60*60
+(10000/20000000000)*(secs365/3)*250 #5C EXPECTED VALUE
+```
+5c 1314 rounds to 1300
+
+```{r}
+expectedamounts <- sapply(seq(100,10000000,100),function(x){(x/20000000000)*(secs365/3)*250})
+ticketresults <- data.frame(NumberOfTickets=seq(100,10000000,100),ExpectedWinnings=expectedamounts)
+ticketresults$ExpectedWinnings[which(ticketresults$NumberOfTickets == 100000)] #5d
+ticketresults$ExpectedWinnings[which(ticketresults$NumberOfTickets == 1000000)] #5d
+```
+5d $13140 and $1314000 are the expected winnings if you buy 100 000 and 10 000 000 tickets respectively.
+```{r}
+#5d
+ggplot(data=ticketresults,aes(x=NumberOfTickets,y=ExpectedWinnings))+geom_line()+ggtitle("Expected Profits in a year as a function of raffle tickets bought")+ylab("Expected Profit ($)")+xlab("Number of Tickets Bought")+scale_x_log10(labels = function(x) format(x, scientific = TRUE))+scale_y_continuous(breaks=seq(0,1500000,100000))
+```
+
+######### BONUS ############
+
+```{r}
+round(365/mean(rbinom(10000000,secs365/3,100000/20000000000)))#365/number of wins per year
+round(365/mean(rbinom(10000000,secs365/3,1000000/20000000000)))#365/number of wins per year
+```
+BONUS 7 AND 1 for 100k tickets and 1mil tickets respectively
+
+First we generate the number of wins that happen yearly for 100k and 1m tickets with 10 million simulations of rbinom and then we find the number of days between wins by doing 365/(wins/365 days) to get 7 and 1 respectively. I believe it follows an exponential distribution from what I remember but I am rusty with stats :0
+```
+
+
+
+
+
+
+
+

@@ -1,0 +1,206 @@
+NAGULAN NATHAN 30064918 BTMA 431
+
+```{r}
+#loading the same libraries as other hw assignments regardless of their use just in case I end up using their functions
+library(quantmod)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+library(plyr)
+library(rvest)
+library(XML)
+library(httr)
+```
+
+-----QUESTION 1 -------
+
+
+```{r}
+load("C:/Users/nagul/Documents/Working Directory/btma.431.736.f2018.v2.rda")
+scores <- btma.431.736.f2018
+head(scores,4)
+attach(scores)
+```
+```{r}
+BANAboolean <- mapply(function(x){if (x=='Yes')1 else 0},BANA) #converting yes and no to 1 or 0
+scores[,"BANA"] <- BANAboolean
+#regression below
+mlfit <- lm(final.raw.score.excluding.bonus ~ final.project + post.retake.midterm +textbook.quiz.average +HW.average + BANA,data = scores)
+summary(mlfit)
+```
+1a) The coefficient estimate is 0.40
+
+```{r}
+normalizedhw <- mapply(function(x){x/20*100},HW.average) #Normalziing scores
+normalizedtbquiz <- mapply(function(x){x/15*100},textbook.quiz.average)
+scores[,"HW.average"] <- normalizedhw
+scores[,"textbook.quiz.average"] <- normalizedtbquiz
+```
+
+
+```{r}
+mlfit <- lm(final.raw.score.excluding.bonus ~ final.project + post.retake.midterm +textbook.quiz.average +HW.average + BANA,data = scores)
+summary(mlfit)
+
+```
+1b) only thing that changed are coefficient estimate and standard error for the 2 predictors we normalized
+1c)BANA students do not statistically significantly do better than NON-BANA students when all other variables are included as the p-value of 0.36 is not signifant and therefore we cannot reject the null hypothesis.
+
+```{r}
+#1d, we include post.retake.midterm * BANA to see whether a student being in BANA or not moderates the the impact of the post retake midterm score on the final average.
+mlfit1d <- lm(final.raw.score.excluding.bonus ~ final.project + post.retake.midterm +textbook.quiz.average +HW.average + BANA + post.retake.midterm * BANA,data = scores)
+summary(mlfit1d)
+
+```
+1D) 0.86 is the p value, it is not significant.
+
+```{r}
+#1e
+mlfit1e <- lm(log(final.raw.score.excluding.bonus) ~ log(final.project) + log(post.retake.midterm) + log(textbook.quiz.average) + log(HW.average),data = scores)
+summary(mlfit1e)
+```
+1e)0.38065, or 0.38
+
+
+-----QUESTION 2 -------
+
+```{r}
+unitcost <- 1
+
+quantitydemanded <- function(sellingprice,roughEstimate=50){
+  qdemanded <- roughEstimate-5*sellingprice
+  return(qdemanded)
+}
+
+profit2a <- function(sellingprice,roughEstimate=50){
+  profit <- quantitydemanded(sellingprice,roughEstimate) * (sellingprice - unitcost)
+  return(profit)
+  }
+
+pricevector <- c(seq(1,9,by=0.01))
+
+#2a
+optimize(f=profit2a,interval=pricevector,maximum=TRUE)
+```
+2a) Price of $5.50 and profit of $101.25
+
+
+```{r}
+#what would be the optimal price at different rough estimate values?
+#2b
+optimize(f=profit2a,roughEstimate = 45,interval=c(min(pricevector),max(pricevector)), maximum=TRUE)$maximum
+optimize(f=profit2a,roughEstimate = 55,interval=c(min(pricevector),max(pricevector)), maximum=TRUE)$maximum
+```
+2b) Q(p) = 45 − 5p has an optimal price of $5.00
+    
+    Q(p) = 55 − 5p has an optimal price of $6.00
+    
+    
+```{r}
+#2C
+x <-  c(seq(40,60,5))
+plottingdata <- data.frame(M = x , OptimalPrice=sapply(x, function(x){optimize(f=profit2a,roughEstimate = x,interval=c(min(pricevector),max(pricevector)), maximum=TRUE)$maximum}))
+ggplot(data=plottingdata,aes(x=M,y=OptimalPrice))+geom_line()+ggtitle("Plot of Changes to Optimal Price at differing levels of M")+xlab("M values in demand function Q(p) = M - 5p") + ylab("Optimal Price of a juice bottle ($)")+ scale_y_continuous(
+  labels = scales::number_format(accuracy = 0.01,
+                                 decimal.mark = '.'))
+
+```
+```{r}
+#2C
+
+quantitydemanded2c <- function(sellingprice,roughEstimate=50,k){
+  qdemanded <- roughEstimate-k*sellingprice
+  return(qdemanded)
+}
+
+
+profit2c <- function(sellingprice,roughEstimate=50,k){
+
+  profit <- quantitydemanded2c(sellingprice,roughEstimate,k) * (sellingprice - unitcost)
+  
+  return(profit)
+  }
+
+pricevector2c <- c(seq(1,15,0.01))
+
+OptimalPriceM45 <- sapply(k <- c(seq(2,8,0.01)),function(k){optimize(f=profit2c,roughEstimate = 45,k,interval=c(min(pricevector2c),max(pricevector2c)), maximum=TRUE)$maximum})
+
+OptimalPriceM55 <- sapply(k <- c(seq(2,8,0.01)),function(k){optimize(f=profit2c,roughEstimate = 55,k,interval=c(min(pricevector2c),max(pricevector2c)), maximum=TRUE)$maximum})
+
+```
+
+
+```{r}
+#2D
+q2d.df <- data.frame(k=c(seq(2,8,0.01)),OptimalPriceM45, OptimalPriceM55)
+q2d.df[q2d.df$OptimalPriceM45 == 5.00,]
+```
+
+```{r}
+#2D
+ggplot()+geom_line(data=q2d.df,aes(y=OptimalPriceM45,x=k,color='M45'))+geom_line(data=q2d.df,aes(x=k,y=OptimalPriceM55,color='M55'))+xlab("k")+scale_color_manual(name="M values",values=c("M45"="red","M55"="blue"))+ylab("Optimal Price($)")+ggtitle("Plotting the Optimal Price as a function of k")
+```
+```{r}
+load("C:/Users/nagul/Documents/Working Directory/salesData.rda")
+
+
+
+#Tthis function adds a profit column, and does a regression model using price + price^2  to predict profit. Then we can use the regression model for every row in the data to find the price for which it predicts the highest profit. 
+userfunction2e <- function(historicaldata){
+  colnames(historicaldata)[2] <- "quantitysold"
+  historicaldata$profit  <- historicaldata$quantitysold * (historicaldata$price - 1)
+  trialmodel <- lm(profit ~ price + I(price^2), data=historicaldata)
+  historicaldata$regression <- sapply(c(1:nrow(historicaldata)),function(x){predict(trialmodel,data.frame(price = historicaldata[x,1], quantitysold =  historicaldata[x,2]))})
+  optimalprice2e <- sprintf('%.2f',round_any(historicaldata[historicaldata$regression == max(historicaldata$regression),]$price[1],0.10))
+  return(optimalprice2e)
+  }
+```
+
+```{r}
+userfunction2e(salesData) #2e USER DEFINED FUNCTION
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
